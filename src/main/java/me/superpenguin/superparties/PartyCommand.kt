@@ -1,8 +1,5 @@
 package me.superpenguin.superparties
 
-import com.github.supergluelib.teams.TeamManager
-import com.github.supergluelib.teams.TeamManager.getTeam
-import com.github.supergluelib.teams.TeamManager.hasTeam
 import me.superpenguin.superglue.foundations.send
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
@@ -10,15 +7,18 @@ import net.kyori.adventure.text.event.HoverEvent
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.entity.Player
+import revxrsal.commands.annotation.AutoComplete
 import revxrsal.commands.annotation.Command
-import revxrsal.commands.annotation.NotSender
+import revxrsal.commands.annotation.Named
 import revxrsal.commands.annotation.Subcommand
-import revxrsal.commands.bukkit.BukkitCommandHandler
+import revxrsal.commands.bukkit.player
 import revxrsal.commands.exception.CommandErrorException
 import java.util.*
 
 @Command("party")
-class PartyCommand(handler: BukkitCommandHandler, val plugin: SuperParties) {
+class PartyCommand(val parties: SuperParties.PartyPlugin) {
+    val manager = parties.manager
+    val handler = parties.commandHandler
 
     @Target(AnnotationTarget.VALUE_PARAMETER)
     @Retention(AnnotationRetention.RUNTIME)
@@ -28,57 +28,85 @@ class PartyCommand(handler: BukkitCommandHandler, val plugin: SuperParties) {
     @Retention(AnnotationRetention.RUNTIME)
     private annotation class Partied
 
+    @Target(AnnotationTarget.VALUE_PARAMETER)
+    @Retention(AnnotationRetention.RUNTIME)
+    private annotation class PartyLeader
+
+    @Target(AnnotationTarget.VALUE_PARAMETER)
+    @Retention(AnnotationRetention.RUNTIME)
+    private annotation class NotSelf
+
     init {
-        handler.registerParameterValidator(Player::class.java) { player, param, _ ->
+        handler.autoCompleter.registerSuggestion("TeamMembers") { _, sender, _ -> manager.getTeam(sender.player)?.getNames() ?: throw CommandErrorException("You are not in a team") }
+
+        handler.registerParameterValidator(Player::class.java) { player, param, actor ->
+            if (param.hasAnnotation(NotSelf::class.java)) {
+                if (actor.uniqueId == player.uniqueId) throw CommandErrorException("You cannot specify yourself!")
+            }
+
             if (param.hasAnnotation(Partyless::class.java)) {
-                if (player.hasTeam()) throw CommandErrorException("You are already in a party")
+                if (manager.hasTeam(player)) throw CommandErrorException("You are already in a party")
             } else if (param.hasAnnotation(Partied::class.java)) {
-                if (!player.hasTeam()) throw CommandErrorException("You are not in a party")
+                if (!manager.hasTeam(player)) throw CommandErrorException("You are not in a party")
+            }
+            if (param.hasAnnotation(PartyLeader::class.java)) {
+                val team = manager.getTeam(player) ?: throw CommandErrorException("You are not in a party")
+                if (!team.isLeader(player)) throw CommandErrorException("You are not the party leader")
             }
         }
     }
 
-    val toggledPChat = HashSet<UUID>()
-
     @Subcommand("create")
     fun createParty(@Partyless sender: Player) {
-        TeamManager.createNewTeam(sender)
+        manager.addTeam(Party(sender))
         sender.send("&7Created a new party")
     }
 
     @Subcommand("invite")
-    fun inviteToParty(sender: Player, @NotSender other: Player) {
-        val team = TeamManager.getOrCreateTeam(sender)
+    fun inviteToParty(sender: Player, @NotSelf @Named("invitee") other: Player) {
+        val team = manager.getOrCreateTeam(sender) { Party(sender) }
         val teamid = team.id
-        plugin.parties.audience.player(other).sendMessage(
+        sender.send("&7Sent an invite to ${other.name}")
+        parties.audience.player(other).sendMessage(
             Component.text("${sender.name} has sent you a party invite. ").color(NamedTextColor.GRAY).append(
                 Component.text("Click here to accept")
                     .color(NamedTextColor.GOLD)
                     .decorate(TextDecoration.BOLD)
                     .hoverEvent(HoverEvent.showText(Component.text("Click here to accept ${sender.name}'s invite.")))
-                    .clickEvent(ClickEvent.callback { TeamManager.findTeamByID(teamid)?.add(other) ?: other.send("&cThis party has expired") })
+                    .clickEvent(ClickEvent.callback { manager.findTeamByID(teamid)?.add(other) ?: other.send("&cThis party has expired") })
             )
         )
     }
 
     @Subcommand("leave")
     fun leaveParty(@Partied sender: Player) {
-        val team = sender.getTeam()!!
+        val team = manager.getTeam(sender)!!
         team.remove(sender)
-        if (team.isEmpty()) TeamManager.removeTeam(team)
-        toggledPChat.remove(sender.uniqueId)
+        if (team.isEmpty()) manager.removeTeam(team)
+        else if (team.isLeader(sender)) team.leader = team.getUUIDs().first()
+        parties.toggledPChat.remove(sender.uniqueId)
+        sender.send("&7Left your current party")
     }
 
     @Subcommand("chat")
     fun toggleChat(@Partied sender: Player) {
         val uuid = sender.uniqueId
-        if (toggledPChat.contains(uuid)) {
-            toggledPChat.remove(uuid)
+        if (parties.toggledPChat.contains(uuid)) {
+            parties.toggledPChat.remove(uuid)
             sender.send("&7Turned &coff&7 party chat!")
         } else {
-            toggledPChat.add(uuid)
+            parties.toggledPChat.add(uuid)
             sender.send("&7Turned &aon&7 party chat!")
         }
+    }
+
+    @Subcommand("kick")
+    @AutoComplete("@TeamMembers")
+    fun kickPlayer(@PartyLeader sender: Player, other: Player) {
+        if (sender == other) throw CommandErrorException("Use '/party leave' instead")
+        val team = manager.getTeam(sender)!!
+        if (team.remove(other)) sender.send("&7Kicked ${other.name} from the party")
+        else sender.send("&7${other.name} is not in your party")
     }
 
 
