@@ -19,7 +19,7 @@ dependencies {
     compileOnly("net.kyori:adventure-text-minimessage:4.14.0")
     compileOnly("net.kyori:adventure-platform-bukkit:4.3.0")
 
-    implementation("com.github.SuperGlueLib:SuperTeamsAPI:f27da6f9d9")
+    implementation("com.github.SuperGlueLib:SuperTeamsAPI:1.0.0")
     implementation("com.github.SuperGlueLib:SuperFoundations:1.2.0")
     implementation(files("lib/SuperGUIs-0.0.6.jar"))
 
