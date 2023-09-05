@@ -3,7 +3,7 @@ package me.superpenguin.superparties
 import com.github.supergluelib.teams.TeamManager
 import me.superpenguin.superglue.foundations.register
 import me.superpenguin.superglue.foundations.send
-import me.superpenguin.superglue.foundations.toColour
+import me.superpenguin.superglue.foundations.toColor
 import me.superpenguin.superglue.guis.GUIManager
 import net.kyori.adventure.platform.bukkit.BukkitAudiences
 import org.bukkit.event.EventHandler
@@ -14,6 +14,11 @@ import revxrsal.commands.bukkit.BukkitCommandHandler
 import java.util.*
 
 class SuperParties: JavaPlugin(), Listener {
+
+    companion object {
+        lateinit var instance: SuperParties
+            private set
+    }
 
     /**
      * Instead of creating a bunch of 'lateinit var private sets', This data class will hold them.
@@ -30,6 +35,8 @@ class SuperParties: JavaPlugin(), Listener {
         private set
 
     override fun onEnable() {
+        instance = this
+
         val cmdhandler = BukkitCommandHandler.create(this)
         val manager = TeamManager<Party>(this)
 
@@ -53,7 +60,7 @@ class SuperParties: JavaPlugin(), Listener {
         val sender = event.player
         if (parties.toggledPChat.contains(sender.uniqueId)) {
             event.isCancelled = true
-            parties.manager.getTeam(sender)?.messageAll("&8[&9Party Chat&8]&7 ${sender.name}&f: ${event.message}".toColour())
+            parties.manager.getTeam(sender)?.messageAll("&8[&9Party Chat&8]&7 ${sender.name}&f: ${event.message}".toColor())
                 ?: parties.toggledPChat.remove(sender.uniqueId).also {
                     sender.send("&cToggled party chat off as you are no longer in a party!")
                 }

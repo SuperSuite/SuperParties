@@ -1,14 +1,19 @@
 package me.superpenguin.superparties
 
 import me.superpenguin.superglue.foundations.send
+import me.superpenguin.superglue.foundations.toColor
+import me.superpenguin.superparties.menus.NoPartyGUI
+import me.superpenguin.superparties.menus.PartyGUI
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.event.HoverEvent
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
+import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import revxrsal.commands.annotation.AutoComplete
 import revxrsal.commands.annotation.Command
+import revxrsal.commands.annotation.DefaultFor
 import revxrsal.commands.annotation.Named
 import revxrsal.commands.annotation.Subcommand
 import revxrsal.commands.bukkit.player
@@ -56,6 +61,12 @@ class PartyCommand(val parties: SuperParties.PartyPlugin) {
         }
     }
 
+    @DefaultFor("party")
+    fun onLonelyArg(sender: Player) {
+        if (manager.hasTeam(sender)) PartyGUI(sender, manager.getTeam(sender)!!).open(sender)
+        else NoPartyGUI(sender).open(sender)
+    }
+
     @Subcommand("create")
     fun createParty(@Partyless sender: Player) {
         manager.addTeam(Party(sender))
@@ -80,11 +91,13 @@ class PartyCommand(val parties: SuperParties.PartyPlugin) {
 
     @Subcommand("leave")
     fun leaveParty(@Partied sender: Player) {
-        val team = manager.getTeam(sender)!!
-        team.remove(sender)
-        if (team.isEmpty()) manager.removeTeam(team)
-        else if (team.isLeader(sender)) team.leader = team.getUUIDs().first()
+        val team = manager.removePlayerFromTeam(sender)
         parties.toggledPChat.remove(sender.uniqueId)
+        team?.messageAll("&9${sender.name}&7 has left the party".toColor())
+        if (team != null && team.isLeader(sender)) {
+            team.leader = team.getUUIDs().first()
+            team.messageAll("&9${Bukkit.getOfflinePlayer(team.leader).name!!}&7 has been promoted to party leader")
+        }
         sender.send("&7Left your current party")
     }
 
