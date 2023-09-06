@@ -20,8 +20,7 @@ dependencies {
     compileOnly("net.kyori:adventure-platform-bukkit:4.3.0")
 
     implementation("com.github.SuperGlueLib:SuperTeamsAPI:1.0.1")
-    implementation("com.github.SuperGlueLib:SuperFoundations:8ec859478a")
-    implementation(files("lib/SuperGUIs-0.0.6.jar"))
+    implementation("com.github.SuperGlueLib:SuperGUIs:0.1.0")
 
     implementation("com.github.Revxrsal.Lamp:common:3.1.5")
     implementation("com.github.Revxrsal.Lamp:bukkit:3.1.5")

@@ -1,10 +1,10 @@
 package me.superpenguin.superparties
 
+import com.github.supergluelib.guis.GUIManager
 import com.github.supergluelib.teams.TeamManager
 import me.superpenguin.superglue.foundations.register
 import me.superpenguin.superglue.foundations.send
 import me.superpenguin.superglue.foundations.toColor
-import me.superpenguin.superglue.guis.GUIManager
 import net.kyori.adventure.platform.bukkit.BukkitAudiences
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
