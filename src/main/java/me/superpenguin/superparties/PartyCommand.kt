@@ -1,5 +1,6 @@
 package me.superpenguin.superparties
 
+import com.github.supergluelib.lamp.annotations.NotSelf
 import me.superpenguin.superglue.foundations.send
 import me.superpenguin.superglue.foundations.toColor
 import me.superpenguin.superparties.menus.NoPartyGUI
@@ -37,18 +38,10 @@ class PartyCommand(val parties: SuperParties.PartyPlugin) {
     @Retention(AnnotationRetention.RUNTIME)
     private annotation class PartyLeader
 
-    @Target(AnnotationTarget.VALUE_PARAMETER)
-    @Retention(AnnotationRetention.RUNTIME)
-    private annotation class NotSelf
-
     init {
         handler.autoCompleter.registerSuggestion("TeamMembers") { _, sender, _ -> manager.getTeam(sender.player)?.getNames() ?: throw CommandErrorException("You are not in a team") }
 
         handler.registerParameterValidator(Player::class.java) { player, param, actor ->
-            if (param.hasAnnotation(NotSelf::class.java)) {
-                if (actor.uniqueId == player.uniqueId) throw CommandErrorException("You cannot specify yourself!")
-            }
-
             if (param.hasAnnotation(Partyless::class.java)) {
                 if (manager.hasTeam(player)) throw CommandErrorException("You are already in a party")
             } else if (param.hasAnnotation(Partied::class.java)) {

@@ -1,6 +1,7 @@
 package me.superpenguin.superparties
 
 import com.github.supergluelib.guis.GUIManager
+import com.github.supergluelib.lamp.LampManager
 import com.github.supergluelib.teams.TeamManager
 import me.superpenguin.superglue.foundations.register
 import me.superpenguin.superglue.foundations.send
@@ -37,7 +38,7 @@ class SuperParties: JavaPlugin(), Listener {
     override fun onEnable() {
         instance = this
 
-        val cmdhandler = BukkitCommandHandler.create(this)
+        val cmdhandler = LampManager.setup(this, BukkitCommandHandler.create(this))
         val manager = TeamManager<Party>(this)
 
         parties = PartyPlugin(
@@ -47,6 +48,8 @@ class SuperParties: JavaPlugin(), Listener {
             BukkitAudiences.create(this),
             HashSet(),
         )
+
+
 
         cmdhandler.register(PartyCommand(parties))
         register(this)
