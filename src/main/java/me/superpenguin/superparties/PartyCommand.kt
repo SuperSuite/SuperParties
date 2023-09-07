@@ -85,13 +85,8 @@ class PartyCommand(val parties: SuperParties.PartyPlugin) {
     @Subcommand("leave")
     fun leaveParty(@Partied sender: Player) {
         val team = manager.removePlayerFromTeam(sender)
-        parties.toggledPChat.remove(sender.uniqueId)
-        team?.messageAll("&9${sender.name}&7 has left the party".toColor())
-        if (team != null && team.isLeader(sender)) {
-            team.leader = team.getUUIDs().first()
-            team.messageAll("&9${Bukkit.getOfflinePlayer(team.leader).name!!}&7 has been promoted to party leader")
-        }
         sender.send("&7Left your current party")
+        team?.messageAll("&9${sender.name}&7 has left the party".toColor())
     }
 
     @Subcommand("chat")

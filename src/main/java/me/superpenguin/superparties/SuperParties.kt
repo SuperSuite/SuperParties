@@ -26,7 +26,7 @@ class SuperParties: JavaPlugin(), Listener {
      */
     data class PartyPlugin(
         val plugin: SuperParties,
-        val manager: TeamManager<Party>,
+        val manager: PartyManager,
         val commandHandler: BukkitCommandHandler,
         val audience: BukkitAudiences,
         val toggledPChat: HashSet<UUID>,
@@ -39,7 +39,7 @@ class SuperParties: JavaPlugin(), Listener {
         instance = this
 
         val cmdhandler = LampManager.setup(this, BukkitCommandHandler.create(this))
-        val manager = TeamManager<Party>(this)
+        val manager = PartyManager(this)
 
         parties = PartyPlugin(
             this,
